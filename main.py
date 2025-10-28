@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import pprint
 from requests.auth import HTTPDigestAuth
 from io import BytesIO
-from datetime import datetime, time
+from datetime import date, datetime, time, timedelta
 from openpyxl import load_workbook
 from utils import bucket_timestamps, count_rows_in_window_per_day, extract_timestamps
 from liberpassi import fetch_statistics_xlsx
@@ -69,9 +69,9 @@ def post_to_postgrest_buckets(payload: list) -> requests.Response:
 #post_to_postgrest({"siteid":2,"date":"2025-10-11","count":42})
 #post_to_postgrest({"siteid":2,"date":"2025-10-11","count":43})
 
-file_content = fetch_statistics_xlsx()
 
-def post_realtime_state():
+
+def post_realtime_state(file_content: bytes):
     result = count_rows_in_window_per_day(file_content)
     for d,c in result.items():
         print(f"{d}: {c}")
@@ -79,7 +79,7 @@ def post_realtime_state():
         
 
 
-def post_bucketed_state():    
+def post_bucketed_state(file_content: bytes):    
     byte_stream = BytesIO(file_content)
     workbook = load_workbook(byte_stream)
     sheet = workbook['Sheet1']
@@ -98,18 +98,39 @@ def post_bucketed_state():
 
 RET=0
 
-try:
-    post_realtime_state()
-except Exception as e:
-    print(f"Failed to post realtime state: {e}")
-    
-    RET=1
 
-try:
-    post_bucketed_state()
-except Exception as e:
-    print(f"Failed to post bucketed state: {e}")
-    RET=2
+
+def run(target_date: datetime, new_session=True):
+    global RET
+    file_content = fetch_statistics_xlsx(start_date=target_date, end_date=target_date, new_session=new_session)
+
+    try:
+        post_realtime_state(file_content)
+    except Exception as e:
+        print(f"Failed to post realtime state: {e}")
+
+        RET=1
+
+    try:
+        post_bucketed_state(file_content)
+    except Exception as e:
+        print(f"Failed to post bucketed state: {e}")
+        RET=2
+
+run(datetime.now())
+
+
+
+def run_range(start_date,end_date):
+
+    current_date = start_date
+    while current_date <= end_date:
+        if current_date.weekday() < 5: 
+            run(current_date,False)
+        current_date += timedelta(days=1)
+
+if False:
+    run_range(datetime(2099, 1, 1),datetime.now())
 
 if PING_URL:
     try:

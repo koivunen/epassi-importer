@@ -59,11 +59,9 @@ def fetch_statistics_xlsx(start_date: datetime | None = None, end_date: datetime
 
         auth_header = {"Authorization":f"{token}"}
 
-        #pprint.pprint(s.cookies.get_dict())
-
         # required for mangling serverside session
         resp=s.get(REDIRECT,headers=auth_header,timeout=30)
-        print(resp.url,resp.status_code)
+        resp.raise_for_status()
 
     # statistics page
 
