@@ -1,0 +1,14 @@
+[project]
+name = "epassi-importer"
+version = "0.1.0"
+description = "Import epassi statistics into db"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.3",
+    "psycopg2-binary>=2.9.11",
+    "python-dotenv>=1.1.1",
+    "requests>=2.32.5",
+    "sentry-sdk>=2.41.0",
+]
