@@ -1,32 +1,49 @@
 --TODO
 
 
-CREATE TABLE site_diner_counts (
-	id serial NOT NULL,
-	siteid int2 NOT NULL DEFAULT -1, 
-	"date" date NOT NULL,
-	count int2 NOT NULL,
-	created_at timestamptz DEFAULT now() NOT NULL,
-	CONSTRAINT site_diner_counts_pkey PRIMARY KEY (id),
-	CONSTRAINT unique_site_date UNIQUE (siteid, date)
+create table site_diner_counts (
+	id serial not null,
+	siteid int2 not null default -1, 
+	"date" date not null,
+	count int2 not null,
+	created_at timestamptz default now() not null,
+	constraint site_diner_counts_pkey primary key (id),
+	constraint unique_site_date unique (siteid,
+date)
 );
 
+comment on
+column public.site_diner_counts.siteid is '1=asd 2=qwe';
 
-COMMENT ON COLUMN public.site_diner_counts.siteid IS '1=asd 2=qwe';
-
-
-CREATE TABLE site_diners_5m_buckets (
-    bucket_time TIMESTAMP PRIMARY KEY,
-    entry_count INT,
-	siteid int2 NOT NULL DEFAULT -1
+create table site_diners_5m_buckets (
+    bucket_time timestamptz(0) primary key,
+    count int2,
+	siteid int2 not null default -1,
+    updated_at timestamptz(0) default CURRENT_TIMESTAMP not null
 );
 
-CREATE INDEX idx_site_diners_5m_buckets_bucket_time ON site_diners_5m_buckets (bucket_time);
+create index idx_site_diners_5m_buckets_bucket_time on
+	site_diners_5m_buckets (bucket_time);
+
+CREATE OR REPLACE FUNCTION func_update_site_diners_5m_buckets_timestamp() 
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_site_diners_5m_buckets_timestamp
+BEFORE UPDATE ON site_diners_5m_buckets
+FOR EACH ROW
+EXECUTE FUNCTION func_update_site_diners_5m_buckets_timestamp();
 
 
-CREATE USER site_diners_5m_buckets WITH PASSWORD 'password';
+create user site_diners_5m_buckets with password 'password';
 
-GRANT CONNECT ON DATABASE diningflow TO site_diners_5m_buckets;
+grant connect on
+database diningflow to site_diners_5m_buckets;
+
 grant ipaccess to site_diners_5m_buckets;
 
 GRANT USAGE ON SCHEMA public TO site_diners_5m_buckets;

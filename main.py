@@ -90,7 +90,7 @@ def post_bucketed_state(file_content: bytes):
     for timestamp, count in bucketed_timestamps.items():
         entry = {
             "bucket_time": str(timestamp),
-            "entry_count": count,
+            "count": count,
             "siteid": SITEID
         }
         payload.append(entry)
